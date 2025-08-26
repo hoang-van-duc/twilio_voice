@@ -61,6 +61,7 @@ class VoiceFirebaseMessagingService : FirebaseMessagingService(), MessageListene
         Log.d(TAG, "Received onMessageReceived()")
         Log.d(TAG, "Bundle data: " + remoteMessage.data)
         Log.d(TAG, "From: " + remoteMessage.from)
+        ensureForegroundService()
         // If application is running in the foreground use local broadcast to handle message.
         // Otherwise use the background isolate to handle message.
         if (remoteMessage.data.isNotEmpty()) {
@@ -68,6 +69,27 @@ class VoiceFirebaseMessagingService : FirebaseMessagingService(), MessageListene
             if (!valid) {
                 Log.d(TAG, "onMessageReceived: The message was not a valid Twilio Voice SDK payload, continuing...")
             }
+        }
+    }
+
+    private fun ensureForegroundService() {
+        val notification = NotificationCompat.Builder(this, "twilio_call_channel")
+            .setSmallIcon(android.R.drawable.stat_sys_phone_call)
+            .setContentTitle("Incoming call")
+            .setContentText("Twilio Voice call is active")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .build()
+    
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                1001,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
+            )
+        } else {
+            startForeground(1001, notification)
         }
     }
 
